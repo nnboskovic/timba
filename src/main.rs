@@ -67,7 +67,7 @@ impl TimbaApp {
     /// Get two quiniela numbers + lore from the complete table.
     /// I should make this better later by fetching it from a .csv
     fn quiniela_gen_numbers() -> Vec<QuinielaNumber> {
-        let all_numbers: Vec<QuinielaNumber> = QuinielaNumber::populate();
+        let all_numbers: Vec<QuinielaNumber> = QuinielaNumber::populate_from_csv().unwrap();
         let mut res: Vec<QuinielaNumber> = vec![];
 
         for n in all_numbers.choose_multiple(&mut rand::thread_rng(), 2) {
@@ -181,13 +181,13 @@ impl eframe::App for TimbaApp {
                 ui.add_space(5.);
 
                 for num in &self.quiniela_numbers {
-                    let mut display_string = num.number.to_owned();
+                    let display_string = num.number.to_owned();
 
                     ui.label(RichText::new(display_string).text_style(TextStyle::Monospace));
                 }
 
                 for num in &self.quiniela_numbers {
-                    let mut display_string = num.lore.to_owned();
+                    let display_string = num.lore.to_owned();
 
                     ui.label(RichText::new(display_string).text_style(TextStyle::Monospace));
                 }
