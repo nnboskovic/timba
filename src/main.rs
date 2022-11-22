@@ -71,7 +71,8 @@ impl TimbaApp {
         let mut res: Vec<QuinielaNumber> = vec![];
 
         for n in all_numbers.choose_multiple(&mut rand::thread_rng(), 2) {
-            res.push(*n)
+            let clone = n.clone();
+            res.push(clone)
         }
 
         res
