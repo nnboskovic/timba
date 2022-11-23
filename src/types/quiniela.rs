@@ -2,7 +2,6 @@ use std::fs;
 use std::ffi::OsStr;
 use std::fs::{DirEntry, File};
 use std::io::{BufRead, BufReader};
-use std::os::unix::fs::DirEntryExt2;
 use std::str::Split;
 
 #[derive(Clone, Debug)]
@@ -16,25 +15,18 @@ impl QuinielaNumber {
         QuinielaNumber { number, lore }
     }
 
+    /// Read data from resources/quiniela.csv and populate a vector for later reading.
     pub fn populate_from_csv() -> Result<Vec<QuinielaNumber>, anyhow::Error> {
         let mut nums: Vec<QuinielaNumber> = vec![];
-        /*let mut resources_path;
 
-        let paths = fs::read_dir("./resources")?;
-        for path in paths {
-            if let Some("quiniela.csv") = path.extension().and_then(OsStr::to_str) {
-                resources_path = path.unwrap();
-            }
-        }*/
+        let input = fs::read_to_string("./resources/quiniela.csv");
+        let binding = input.unwrap();
+        let lines = binding.split("\n");
 
-        let input = File::open(/*path goes here*/)?;
-        let buffered = BufReader::new(input);
-
-        for line in buffered.lines() {
-            let line = line.unwrap();
-            let mut split_line = line.split(",");
-            let number = split_line.nth(0).unwrap().to_string();
-            let lore = split_line.nth(1).unwrap().to_string();
+        for line in lines {
+            let mut split_line = line.split(", ").collect::<Vec<&str>>();
+            let number = split_line[0].to_string();
+            let lore = split_line[1].to_string();
 
             nums.push(QuinielaNumber::new(number, lore));
         }
