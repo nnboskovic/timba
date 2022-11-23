@@ -1,8 +1,4 @@
 use std::fs;
-use std::ffi::OsStr;
-use std::fs::{DirEntry, File};
-use std::io::{BufRead, BufReader};
-use std::str::Split;
 
 #[derive(Clone, Debug)]
 pub struct QuinielaNumber {
@@ -24,7 +20,7 @@ impl QuinielaNumber {
         let lines = binding.split("\n");
 
         for line in lines {
-            let mut split_line = line.split(", ").collect::<Vec<&str>>();
+            let split_line = line.split(", ").collect::<Vec<&str>>();
             let number = split_line[0].to_string();
             let lore = split_line[1].to_string();
 

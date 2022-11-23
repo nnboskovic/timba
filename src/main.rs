@@ -1,23 +1,109 @@
 mod types;
-
+use crate::types::QuinielaNumber;
+use chrono;
+use chrono::{Datelike};
 use eframe::egui;
 use egui::{Color32, Stroke, RichText, TextStyle};
 use rand::Rng;
 use rand::seq::SliceRandom;
 use std::collections::HashSet;
-use crate::types::QuinielaNumber;
+use std::io::Cursor;
+use scraper::{Html, Selector};
+use quick_xml::events::Event;
+use quick_xml::reader::Reader;
 
-fn main() {
+
+
+
+struct LotoResult {
+    result: Vec<u32>,
+}
+
+impl Default for LotoResult {
+    fn default() -> Self {
+        LotoResult {
+            result: vec![0, 0, 0, 0, 0, 0, 0]
+        }
+    }
+}
+
+
+/// Fetch results from loteriadelaciudad.gob.ar's XML
+/// Must assume YYYY/MM/LTO51XYYYYMMDD.xml format for now
+async fn scrape_loto_results() -> Result<LotoResult, anyhow::Error> {
+    let page = reqwest::get("https://loto.loteriadelaciudad.gob.ar/")
+        .await?
+        .text()
+        .await?;
+
+    // ugly
+    let document = Html::parse_document(&page);
+    let selector = Selector::parse(r#"#combo"#).unwrap();
+    let span = Selector::parse(r#"select"#).unwrap();
+    let option = Selector::parse(r#"option"#).unwrap();
+    let first = document.select(&selector).nth(0).unwrap();
+    let inner = Html::parse_document(&first.inner_html());
+    let first_sub = inner.select(&span).nth(0).unwrap().inner_html();
+    let first_sub_parsed = Html::parse_document(&first_sub);
+    let first_option = first_sub_parsed.select(&option).nth(0).unwrap();
+    let first_option_text = first_option.text().nth(0).unwrap();
+
+    println!("{:?}", first_option_text); // got em
+
+    let split_date_text = first_option_text
+        .split(" - ")
+        .nth(0)
+        .unwrap()
+        .replace("Fecha: ", "");
+
+    let contest_date_text = split_date_text.trim();
+    let contest_date_split = contest_date_text.split("/").collect::<Vec<&str>>();
+    let contest_date_day = contest_date_split[0];
+    let contest_date_month = contest_date_split[1];
+    let contest_date_year = contest_date_split[2];
+
+    // https://loto.loteriadelaciudad.gob.ar/resultadosLoto/descarga.php?sorteo=2022/11/LTO51X20221119.xml
+    let mut url = "https://loto.loteriadelaciudad.gob.ar/resultadosLoto/descarga.php?sorteo=".to_string();
+    let lto_num = "LTO051X2".to_string();
+    let dot_xml = ".xml";
+
+    url.push_str(contest_date_year);
+    url.push_str("/");
+    url.push_str(contest_date_month);
+    url.push_str("/");
+    url.push_str(&*lto_num);
+    url.push_str(contest_date_year);
+    url.push_str(contest_date_month);
+    url.push_str(contest_date_day);
+    url.push_str(dot_xml);
+
+    let xml_response = reqwest::get(url)
+        .await?
+        .text()
+        .await?;
+
+    let doc = roxmltree::Document::parse(&xml_response).unwrap();
+    let extracts = doc.descendants().find(|item| item.attribute("id") == Some("Extractos")).unwrap();
+
+    for extract in extracts {
+        println!("{:?}", extract);
+    }
+    
+    Ok(LotoResult::default())
+}
+
+#[tokio::main]
+async fn main() -> Result<(), anyhow::Error> {
     let options = eframe::NativeOptions::default();
-
+    scrape_loto_results().await?;
     eframe::run_native(
         "Timba",
         options,
         Box::new(|_cc| Box::new(TimbaApp::default())),
     );
+
+    Ok(())
 }
-
-
 
 struct TimbaApp {
     loto_numbers: Vec<u32>,
