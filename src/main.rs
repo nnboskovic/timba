@@ -72,15 +72,15 @@ async fn scrape_loto_results() -> Result<LotoResult, anyhow::Error> {
     url.push_str(contest_date_day);
     url.push_str(dot_xml);
 
-    let xml_response = reqwest::get(url)
+    /* let xml_response = reqwest::get(url)
         .await?
         .text()
         .await?;
 
-    let doc = roxmltree::Document::parse(&xml_response).unwrap();
+     let doc = roxmltree::Document::parse(&xml_response).unwrap();
     let extracts = doc.descendants().find(|item| item.attribute("id") == Some("Extractos")).unwrap();
 
-    /* for extract in extracts {
+    for extract in extracts {
         println!("{:?}", extract);
     } */
     
@@ -90,7 +90,7 @@ async fn scrape_loto_results() -> Result<LotoResult, anyhow::Error> {
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let options = eframe::NativeOptions::default();
-    scrape_loto_results().await?;
+    // scrape_loto_results().await?;
     eframe::run_native(
         "Timba",
         options,
@@ -132,7 +132,7 @@ impl TimbaApp {
     fn loto_gen_numbers() -> Vec<u32> {
         let mut num_vec = TimbaApp::gen_num_array(6);
 
-        let generated_jack: u32 = rng.gen_range(0..9);
+        let generated_jack: u32 = rand::thread_rng().gen_range(0..9);
         num_vec.push(generated_jack);
 
         num_vec
