@@ -9,6 +9,7 @@ struct DatosSorteo {
     fecha_proximo_sorteo: String,
     hora_proximo_sorteo: String,
     pozo_estimado: String,
+    extractos: Vec<Extracto>,
 }
 
 struct Extracto {
@@ -26,10 +27,4 @@ struct Autoridades {
 struct Autoridad {
     autoridad_tipo: String,
     autoridad_nombre: String,
-}
-
-struct XmlLotoCiudadResult {
-    data: Vec<std::collections::HashMap<String, String>>,
-    extracts: Vec<XmlLotoCiudadExtract>,
-    authorities: Vec<XmlLotoCiudadAuthority>,
 }
