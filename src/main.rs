@@ -9,11 +9,6 @@ use rand::seq::SliceRandom;
 use std::collections::HashSet;
 use std::io::Cursor;
 use scraper::{Html, Selector};
-use quick_xml::events::Event;
-use quick_xml::reader::Reader;
-
-
-
 
 struct LotoResult {
     result: Vec<u32>,
@@ -85,9 +80,9 @@ async fn scrape_loto_results() -> Result<LotoResult, anyhow::Error> {
     let doc = roxmltree::Document::parse(&xml_response).unwrap();
     let extracts = doc.descendants().find(|item| item.attribute("id") == Some("Extractos")).unwrap();
 
-    for extract in extracts {
+    /* for extract in extracts {
         println!("{:?}", extract);
-    }
+    } */
     
     Ok(LotoResult::default())
 }
@@ -112,12 +107,12 @@ struct TimbaApp {
 }
 
 impl TimbaApp {
-    fn quini_gen_numbers() -> Vec<u32> {
+    fn gen_num_array(array_length: usize) -> Vec<u32> {
         let mut rng = rand::thread_rng();
         let mut nums = HashSet::new();
         let mut num_vec: Vec<u32>;
 
-        while nums.len() < 6 {
+        while nums.len() < array_length {
             let generated_number: u32 = rng.gen_range(0..=45);
 
             if !nums.contains(&generated_number) {
@@ -130,19 +125,12 @@ impl TimbaApp {
 
         num_vec
     }
+    fn quini_gen_numbers() -> Vec<u32> {
+        TimbaApp::gen_num_array(6)
+    }
 
     fn loto_gen_numbers() -> Vec<u32> {
-        let mut rng = rand::thread_rng();
-        let mut nums = HashSet::new();
-        let mut num_vec: Vec<u32>;
-
-        while nums.len() < 6 {
-            let generated_number: u32 = rng.gen_range(0..45);
-            nums.insert(generated_number);
-        }
-
-        num_vec = nums.into_iter().collect();
-        num_vec.sort();
+        let mut num_vec = TimbaApp::gen_num_array(6);
 
         let generated_jack: u32 = rng.gen_range(0..9);
         num_vec.push(generated_jack);
