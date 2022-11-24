@@ -1,23 +1,31 @@
-struct XmlLotoCiudadWinners {
-    winners: u8,
-    matches: u8,
+struct DatosSorteo {
+    version: usize,
+    entidad: String,
+    juego: String,
+    sorteo: usize,
+    fecha_sorteo: String,
+    hora_sorteo: String,
+    fecha_prescripcion: String,
+    fecha_proximo_sorteo: String,
+    hora_proximo_sorteo: String,
+    pozo_estimado: String,
 }
 
-struct XmlLotoCiudadPrizes {
-    prize_name: String,
-    prize: f32,
+struct Extracto {
+    modalidad: String,
+    suerte: Vec<usize>,
+    ganadores: Vec<usize>,
+    premios: Vec<f32>,
+    pozos: Vec<f32>,
 }
 
-struct XmlLotoCiudadExtract {
-    contest_type: String, // modalidad
-    numbers: Vec<u32>, // <Suerte>
-    prizes: Vec<XmlLotoCiudadPrizes>, // pozos
-    winners: XmlLotoCiudadWinners,
+struct Autoridades {
+    autoridades: Vec<Autoridad>,
 }
 
-struct XmlLotoCiudadAuthority {
-    class: String,
-    name: String,
+struct Autoridad {
+    autoridad_tipo: String,
+    autoridad_nombre: String,
 }
 
 struct XmlLotoCiudadResult {
