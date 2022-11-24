@@ -107,13 +107,14 @@ struct TimbaApp {
 }
 
 impl TimbaApp {
-    fn gen_num_array(array_length: usize) -> Vec<u32> {
+    /// Generate a Vec<u32> of a given length, a given range beginning and a given range end
+    fn gen_num_array(array_length: usize, range_begin: u32, range_end: u32) -> Vec<u32> {
         let mut rng = rand::thread_rng();
         let mut nums = HashSet::new();
         let mut num_vec: Vec<u32>;
 
         while nums.len() < array_length {
-            let generated_number: u32 = rng.gen_range(0..=45);
+            let generated_number: u32 = rng.gen_range(range_begin..=range_end);
 
             if !nums.contains(&generated_number) {
                 nums.insert(generated_number);
@@ -125,12 +126,15 @@ impl TimbaApp {
 
         num_vec
     }
+
+    /// Generate Quini 6 numbers
     fn quini_gen_numbers() -> Vec<u32> {
-        TimbaApp::gen_num_array(6)
+        TimbaApp::gen_num_array(6, 0, 45)
     }
 
+    /// Generate Loto de la Ciudad numbers
     fn loto_gen_numbers() -> Vec<u32> {
-        let mut num_vec = TimbaApp::gen_num_array(6);
+        let mut num_vec = TimbaApp::gen_num_array(6, 0, 45);
 
         let generated_jack: u32 = rand::thread_rng().gen_range(0..9);
         num_vec.push(generated_jack);
@@ -139,7 +143,6 @@ impl TimbaApp {
     }
 
     /// Get two quiniela numbers + lore from the complete table.
-    /// I should make this better later by fetching it from a .csv
     fn quiniela_gen_numbers() -> Vec<QuinielaNumber> {
         let all_numbers: Vec<QuinielaNumber> = QuinielaNumber::populate_from_csv().unwrap();
         let mut res: Vec<QuinielaNumber> = vec![];
