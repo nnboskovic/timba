@@ -1,14 +1,14 @@
 mod types;
 use crate::types::QuinielaNumber;
 use chrono;
-use chrono::{Datelike};
+use chrono::Datelike;
 use eframe::egui;
-use egui::{Color32, Stroke, RichText, TextStyle};
-use rand::Rng;
+use egui::{Color32, RichText, Stroke, TextStyle};
 use rand::seq::SliceRandom;
+use rand::Rng;
+use scraper::{Html, Selector};
 use std::collections::HashSet;
 use std::io::Cursor;
-use scraper::{Html, Selector};
 
 struct LotoResult {
     result: Vec<u32>,
@@ -17,11 +17,10 @@ struct LotoResult {
 impl Default for LotoResult {
     fn default() -> Self {
         LotoResult {
-            result: vec![0, 0, 0, 0, 0, 0, 0]
+            result: vec![0, 0, 0, 0, 0, 0, 0],
         }
     }
 }
-
 
 /// Fetch results from loteriadelaciudad.gob.ar's XML
 /// Must assume YYYY/MM/LTO51XYYYYMMDD.xml format for now
@@ -58,7 +57,8 @@ async fn scrape_loto_results() -> Result<LotoResult, anyhow::Error> {
     let contest_date_year = contest_date_split[2];
 
     // https://loto.loteriadelaciudad.gob.ar/resultadosLoto/descarga.php?sorteo=2022/11/LTO51X20221119.xml
-    let mut url = "https://loto.loteriadelaciudad.gob.ar/resultadosLoto/descarga.php?sorteo=".to_string();
+    let mut url =
+        "https://loto.loteriadelaciudad.gob.ar/resultadosLoto/descarga.php?sorteo=".to_string();
     let lto_num = "LTO051X2".to_string();
     let dot_xml = ".xml";
 
@@ -83,7 +83,7 @@ async fn scrape_loto_results() -> Result<LotoResult, anyhow::Error> {
     for extract in extracts {
         println!("{:?}", extract);
     } */
-    
+
     Ok(LotoResult::default())
 }
 
@@ -201,10 +201,10 @@ impl eframe::App for TimbaApp {
             ui.heading("Timba");
 
             ui.horizontal(|ui| {
-
-                if ui.button(
-                    RichText::new("⟳").text_style(TextStyle::Monospace)
-                ).clicked() {
+                if ui
+                    .button(RichText::new("⟳").text_style(TextStyle::Monospace))
+                    .clicked()
+                {
                     self.loto_numbers = TimbaApp::loto_gen_numbers();
                 }
 
@@ -225,9 +225,10 @@ impl eframe::App for TimbaApp {
             });
 
             ui.horizontal(|ui| {
-                if ui.button(
-                    RichText::new("⟳").text_style(TextStyle::Monospace)
-                ).clicked() {
+                if ui
+                    .button(RichText::new("⟳").text_style(TextStyle::Monospace))
+                    .clicked()
+                {
                     self.quini_numbers = TimbaApp::quini_gen_numbers();
                 }
 
@@ -248,9 +249,10 @@ impl eframe::App for TimbaApp {
             });
 
             ui.horizontal(|ui| {
-                if ui.button(
-                    RichText::new("⟳").text_style(TextStyle::Monospace)
-                ).clicked() {
+                if ui
+                    .button(RichText::new("⟳").text_style(TextStyle::Monospace))
+                    .clicked()
+                {
                     self.quiniela_numbers = TimbaApp::quiniela_gen_numbers();
                 }
 
