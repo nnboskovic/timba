@@ -1,14 +1,14 @@
 mod types;
 use crate::types::QuinielaNumber;
+use chromiumoxide::browser::{Browser, BrowserConfig};
 use chrono;
 use chrono::Datelike;
 use eframe::egui;
 use egui::{Color32, RichText, Stroke, TextStyle};
 use rand::seq::SliceRandom;
 use rand::Rng;
-use scraper::{Html, Selector};
 use std::collections::HashSet;
-use std::io::Cursor;
+use tokio_stream::StreamExt;
 
 struct LotoResult {
     result: Vec<u32>,
@@ -22,75 +22,77 @@ impl Default for LotoResult {
     }
 }
 
+/// Scrape the XML download link from the website
+/// Sadly I need to use a headless chromium instance because lmao js
+async fn get_loto_xml_download_link() -> Result<String, Box<dyn std::error::Error>> {
+    let base_page = "https://loto.loteriadelaciudad.gob.ar";
+
+    let (mut browser, mut handler) = Browser::launch(BrowserConfig::builder().build()?).await?;
+
+    let handle = tokio::task::spawn(async move {
+        loop {
+            match handler.next().await {
+                Some(h) => match h {
+                    Ok(_) => continue,
+                    Err(_) => break,
+                },
+                None => break,
+            }
+        }
+    });
+
+    let page = browser.new_page(base_page).await?;
+    std::thread::sleep(std::time::Duration::from_secs(2));
+
+    let link = page
+        .find_element(r#"a[href$=".xml"]"#)
+        .await?
+        .attribute("href")
+        .await?
+        .unwrap();
+
+    let dl_link = format!("{}/{}", base_page, link);
+
+    println!("{:?}", link);
+    println!("{:?}", dl_link);
+    browser.close().await?;
+    handle.await.expect("TODO: panic message");
+
+    Ok(dl_link)
+}
+
 /// Fetch results from loteriadelaciudad.gob.ar's XML
-/// Must assume YYYY/MM/LTO51XYYYYMMDD.xml format for now
-async fn scrape_loto_results() -> Result<LotoResult, anyhow::Error> {
-    let page = reqwest::get("https://loto.loteriadelaciudad.gob.ar/")
-        .await?
-        .text()
-        .await?;
+async fn scrape_loto_results() -> Result<LotoResult, Box<dyn std::error::Error>> {
+    let dl_link = get_loto_xml_download_link().await?;
 
-    // ugly
-    let document = Html::parse_document(&page);
-    let selector = Selector::parse(r#"#combo"#).unwrap();
-    let span = Selector::parse(r#"select"#).unwrap();
-    let option = Selector::parse(r#"option"#).unwrap();
-    let first = document.select(&selector).nth(0).unwrap();
-    let inner = Html::parse_document(&first.inner_html());
-    let first_sub = inner.select(&span).nth(0).unwrap().inner_html();
-    let first_sub_parsed = Html::parse_document(&first_sub);
-    let first_option = first_sub_parsed.select(&option).nth(0).unwrap();
-    let first_option_text = first_option.text().nth(0).unwrap();
+    let xml_response = reqwest::get(dl_link).await?.text().await?;
 
-    println!("{:?}", first_option_text); // got em
+    let doc = roxmltree::Document::parse(&xml_response).unwrap();
 
-    let split_date_text = first_option_text
-        .split(" - ")
-        .nth(0)
-        .unwrap()
-        .replace("Fecha: ", "");
-
-    let contest_date_text = split_date_text.trim();
-    let contest_date_split = contest_date_text.split("/").collect::<Vec<&str>>();
-    let contest_date_day = contest_date_split[0];
-    let contest_date_month = contest_date_split[1];
-    let contest_date_year = contest_date_split[2];
-
-    // https://loto.loteriadelaciudad.gob.ar/resultadosLoto/descarga.php?sorteo=2022/11/LTO51X20221119.xml
-    let mut url =
-        "https://loto.loteriadelaciudad.gob.ar/resultadosLoto/descarga.php?sorteo=".to_string();
-    let lto_num = "LTO051X2".to_string();
-    let dot_xml = ".xml";
-
-    url.push_str(contest_date_year);
-    url.push_str("/");
-    url.push_str(contest_date_month);
-    url.push_str("/");
-    url.push_str(&*lto_num);
-    url.push_str(contest_date_year);
-    url.push_str(contest_date_month);
-    url.push_str(contest_date_day);
-    url.push_str(dot_xml);
-
-    /* let xml_response = reqwest::get(url)
-        .await?
-        .text()
-        .await?;
-
-     let doc = roxmltree::Document::parse(&xml_response).unwrap();
-    let extracts = doc.descendants().find(|item| item.attribute("id") == Some("Extractos")).unwrap();
-
-    for extract in extracts {
-        println!("{:?}", extract);
-    } */
+    for node in doc.descendants() {
+        if node.is_element() {
+            println!(
+                "{:?} at {}",
+                node.tag_name(),
+                doc.text_pos_at(node.position())
+            );
+        }
+    }
 
     Ok(LotoResult::default())
+}
+
+/// TODO: clean this up
+fn or_else (e: Box<dyn std::error::Error>) -> LotoResult {
+    println!("{:?}", e);
+
+    LotoResult::default()
 }
 
 #[tokio::main]
 async fn main() -> Result<(), anyhow::Error> {
     let options = eframe::NativeOptions::default();
-    // scrape_loto_results().await?;
+    let _ = scrape_loto_results().await.unwrap_or_else(or_else); // todo: spin up another thread for this and have a loading anim?
     eframe::run_native(
         "Timba",
         options,

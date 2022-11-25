@@ -13,5 +13,6 @@ anyhow = "1"
 reqwest = { version = "0.11.13", features = ["json"] }
 chrono = "0.4.23"
 quick-xml = "0.26.0"
-scraper = "0.13.0"
 roxmltree = "0.16.0"
+chromiumoxide = { git = "https://github.com/mattsse/chromiumoxide", features = ["tokio-runtime"], default-features = false, branch = "main"}
+tokio-stream = "0.1.11"
