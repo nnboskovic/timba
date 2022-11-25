@@ -1,8 +1,8 @@
-mod types;
 mod fetchers;
+mod types;
 
 use crate::fetchers::scrape_loto_results;
-use crate::types::{QuinielaNumber, LotoResult};
+use crate::types::{LotoResult, QuinielaNumber};
 
 use chrono;
 use chrono::Datelike;
@@ -13,9 +13,8 @@ use rand::Rng;
 use std::collections::HashSet;
 use tokio_stream::StreamExt;
 
-
 /// TODO: clean this up
-fn or_else (e: Box<dyn std::error::Error>) -> LotoResult {
+fn or_else(e: Box<dyn std::error::Error>) -> LotoResult {
     println!("{:?}", e);
 
     LotoResult::default()
@@ -100,6 +99,66 @@ impl Default for TimbaApp {
     }
 }
 
+fn ui_number_comp_row<F>(
+    ui: &mut egui::Ui,
+    numbers: &mut Vec<u32>,
+    contest: String,
+    gen_function: F,
+) where
+    F: Fn() -> Vec<u32>,
+{
+    ui.horizontal(|ui| {
+        if ui
+            .button(RichText::new("⟳").text_style(TextStyle::Monospace))
+            .clicked()
+        {
+            *numbers = gen_function();
+        }
+
+        ui.label(RichText::new(&*contest).text_style(TextStyle::Monospace));
+
+        ui.add_space(5.);
+
+        for num in &numbers.to_owned() {
+            let mut display_string = num.to_string().to_owned();
+
+            if num.to_owned() < 10 {
+                display_string.insert(1, ' ');
+            }
+
+            ui.label(RichText::new(display_string).text_style(TextStyle::Monospace));
+            ui.add_space(0.5);
+        }
+    });
+}
+
+fn ui_quiniela_row(ui: &mut egui::Ui, numbers: &mut Vec<QuinielaNumber>) {
+    ui.horizontal(|ui| {
+        if ui
+            .button(RichText::new("⟳").text_style(TextStyle::Monospace))
+            .clicked()
+        {
+            *numbers = TimbaApp::quiniela_gen_numbers();
+        }
+
+        ui.label(RichText::new("Quiniela:").text_style(TextStyle::Monospace));
+
+        ui.add_space(5.);
+
+        for num in &mut *numbers {
+            let display_string = num.number.to_owned();
+
+            ui.label(RichText::new(display_string).text_style(TextStyle::Monospace));
+        }
+
+        for num in &mut *numbers {
+            let display_string = num.lore.to_owned();
+
+            ui.label(RichText::new(display_string).text_style(TextStyle::Monospace));
+        }
+    });
+}
+
 impl eframe::App for TimbaApp {
     fn update(&mut self, ctx: &egui::Context, _frame: &mut eframe::Frame) {
         let frame = egui::containers::Frame {
@@ -134,78 +193,21 @@ impl eframe::App for TimbaApp {
 
             ui.heading("Timba");
 
-            ui.horizontal(|ui| {
-                if ui
-                    .button(RichText::new("⟳").text_style(TextStyle::Monospace))
-                    .clicked()
-                {
-                    self.loto_numbers = TimbaApp::loto_gen_numbers();
-                }
+            ui_number_comp_row(
+                ui,
+                &mut self.loto_numbers,
+                "Loto:    ".parse().unwrap(),
+                TimbaApp::loto_gen_numbers,
+            );
 
-                ui.label(RichText::new("Loto:    ").text_style(TextStyle::Monospace));
+            ui_number_comp_row(
+                ui,
+                &mut self.quini_numbers,
+                "Quini 6: ".parse().unwrap(),
+                TimbaApp::quini_gen_numbers,
+            );
 
-                ui.add_space(5.);
-
-                for num in &self.loto_numbers {
-                    let mut display_string = num.to_string().to_owned();
-
-                    if num.to_owned() < 10 {
-                        display_string.insert(1, ' ');
-                    }
-
-                    ui.label(RichText::new(display_string).text_style(TextStyle::Monospace));
-                    ui.add_space(0.5);
-                }
-            });
-
-            ui.horizontal(|ui| {
-                if ui
-                    .button(RichText::new("⟳").text_style(TextStyle::Monospace))
-                    .clicked()
-                {
-                    self.quini_numbers = TimbaApp::quini_gen_numbers();
-                }
-
-                ui.label(RichText::new("Quini 6: ").text_style(TextStyle::Monospace));
-
-                ui.add_space(5.);
-
-                for num in &self.quini_numbers {
-                    let mut display_string = num.to_string().to_owned();
-
-                    if num.to_owned() < 10 {
-                        display_string.insert(1, ' ');
-                    }
-
-                    ui.label(RichText::new(display_string).text_style(TextStyle::Monospace));
-                    ui.add_space(0.5);
-                }
-            });
-
-            ui.horizontal(|ui| {
-                if ui
-                    .button(RichText::new("⟳").text_style(TextStyle::Monospace))
-                    .clicked()
-                {
-                    self.quiniela_numbers = TimbaApp::quiniela_gen_numbers();
-                }
-
-                ui.label(RichText::new("Quiniela:").text_style(TextStyle::Monospace));
-
-                ui.add_space(5.);
-
-                for num in &self.quiniela_numbers {
-                    let display_string = num.number.to_owned();
-
-                    ui.label(RichText::new(display_string).text_style(TextStyle::Monospace));
-                }
-
-                for num in &self.quiniela_numbers {
-                    let display_string = num.lore.to_owned();
-
-                    ui.label(RichText::new(display_string).text_style(TextStyle::Monospace));
-                }
-            });
+            ui_quiniela_row(ui, &mut self.quiniela_numbers);
         });
     }
 }
