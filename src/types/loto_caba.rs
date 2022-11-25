@@ -1,3 +1,15 @@
+pub struct LotoResult {
+    result: Vec<u32>,
+}
+
+impl Default for LotoResult {
+    fn default() -> Self {
+        LotoResult {
+            result: vec![0, 0, 0, 0, 0, 0, 0],
+        }
+    }
+}
+
 struct DatosSorteo {
     version: usize,
     entidad: String,
