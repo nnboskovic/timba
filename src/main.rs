@@ -42,6 +42,8 @@ async fn get_loto_xml_download_link() -> Result<String, Box<dyn std::error::Erro
     });
 
     let page = browser.new_page(base_page).await?;
+
+    // doesn't properly load the page otherwise
     std::thread::sleep(std::time::Duration::from_secs(2));
 
     let link = page
@@ -53,10 +55,8 @@ async fn get_loto_xml_download_link() -> Result<String, Box<dyn std::error::Erro
 
     let dl_link = format!("{}/{}", base_page, link);
 
-    println!("{:?}", link);
-    println!("{:?}", dl_link);
     browser.close().await?;
-    handle.await.expect("TODO: panic message");
+    handle.await.expect("Panic! at the Chromium");
 
     Ok(dl_link)
 }
